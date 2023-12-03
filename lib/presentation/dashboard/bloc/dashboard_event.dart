@@ -8,18 +8,18 @@ class DashboardInitialEvent extends DashboardEvent {
 }
 
 class DashboardPageChangeEvent extends DashboardEvent {
-  final int pageNumber;
-  int player;
+  int pageNumber;
+  
 // PlayerDataModel teamData;
 
-  DashboardPageChangeEvent({required this.pageNumber , required this.player});
+  DashboardPageChangeEvent({required this.pageNumber });
 }
 
-class PlayerChangeEvent extends DashboardPageChangeEvent {
+class PlayerChangeEvent extends DashboardEvent {
 int pageNumber;
 int player;
 
-  PlayerChangeEvent({   required this.player , required this.pageNumber}):super(pageNumber: pageNumber , player: player);
+  PlayerChangeEvent({   required this.player , required this.pageNumber});
 
 }
 

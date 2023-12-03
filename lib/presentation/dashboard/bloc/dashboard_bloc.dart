@@ -11,17 +11,34 @@ part 'dashboard_event.dart';
 part 'dashboard_state.dart';
 
 class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
-  DashboardBloc() : super(DashboardInitial()) {
+  PlayerDataSqfliteDBClass localDb;
+  DashboardBloc({ required this.localDb }) : super(DashboardInitial()) {
     on<DashboardEvent>((event, emit) {
       // TODO: implement event handler
     });
 
 
+///
+/////
+////
+////
+///
 List<PlayerDataModel> teamsData = [];
+///
+/////
+///
+///
+///
+///
+///
+///
+///
+///
+///
 
-    on<DashboardInitialEvent>((event, emit) async{
 
 
+on<DashboardInitialEvent>((event, emit) async{
 
 var data = PlData.data;
 for (var i = 0; i < data.length  ; i++) {
@@ -29,13 +46,10 @@ for (var i = 0; i < data.length  ; i++) {
 }
 
 
-add(DashboardPageChangeEvent(pageNumber: 0 , player: 0));
+add(DashboardPageChangeEvent(pageNumber: 0  ));
   });
 
 var playerIdInDatabase = 0;
-
-
-    PlayerCardWidget selectedWidget;
 var selectedTeamData = PlayerDataModel();
 //
 ////
@@ -50,14 +64,15 @@ var selectedTeamData = PlayerDataModel();
 ///
 ///
 ///
-    on<DashboardPageChangeEvent>((event, emit) async{
- selectedTeamData = teamsData[event.pageNumber];
+on<DashboardPageChangeEvent>((event, emit) async{
+selectedTeamData = teamsData[event.pageNumber];
 
-print( selectedTeamData.players![0].name! );
-var getPlayerFromDb = await PlayerDataSqfliteDBClass().getPlayer(team: selectedTeamData.team! , player:  selectedTeamData.players![0].name!  );
-print(getPlayerFromDb);
+
+
+var getPlayerFromDb = await localDb.getPlayer(team: selectedTeamData.team! , player:  selectedTeamData.players![0].name!  );
+
 var resfromDb;
-getPlayerFromDb.fold((l) {
+ getPlayerFromDb.fold((l) {
 resfromDb = l;
 }, (r) {
 resfromDb = r;
@@ -68,10 +83,15 @@ resfromDb = r;
 
 var setPlayerFromDb;
 
-
 if( resfromDb == 'null' ){
 
-playerIdInDatabase =   await PlayerDataSqfliteDBClass().createPlayer(player: selectedTeamData.players![0].name!, score: selectedTeamData.players![0].score!, team:  selectedTeamData.team! );
+playerIdInDatabase =   await localDb.createPlayer(player: selectedTeamData.players![0].name!, score: selectedTeamData.players![0].score!, team:  selectedTeamData.team! );
+var playerData = await  localDb.getPlayer(team: selectedTeamData.team! , player:  selectedTeamData.players![0].name!  );
+
+await playerData.fold((l) => null, (r) {
+
+  resfromDb = r;
+});
 
 
 }else{
@@ -90,10 +110,9 @@ for (var i = 0; i < selectedTeamData.players!.length; i++) {
 }
 
 
-      selectedWidget = PlayerCardWidget(teamData: selectedTeamData  ,  pageNumber: event.pageNumber );
 
 var score = int.parse(selectedTeamData.players![0].score!);
-      emit(DashboardPageChangedState(selectedWidget ,   score  , 0 ));
+      emit(DashboardPageChangedState(selectedTeamData ,   score  , 0 ));
     });
 
 
@@ -116,34 +135,34 @@ currentScore++;
 
 
 
-selectedWidget = PlayerCardWidget(teamData:teamsData[event.pageNumber] ,  pageNumber: event.pageNumber );
 
- await PlayerDataSqfliteDBClass().updatePlayerSore(id: playerIdInDatabase , score: currentScore.toString(), team: teamsData[event.pageNumber].team! , player: teamsData[event.pageNumber].players![event.player]!.name!  );
+ await localDb.updatePlayerSore(id: playerIdInDatabase , score: currentScore.toString(), team: teamsData[event.pageNumber].team! , player: teamsData[event.pageNumber].players![event.player]!.name!  );
 
-emit( DashboardPageChangedState( selectedWidget , currentScore , event.player) );
+emit( DashboardPageChangedState(selectedTeamData , currentScore , event.player) );
 
 });
 
 on<PlayerScoreDecreaseEvent>((event, emit) async{
 
   var currentScore = event.score;
+
+if( event.score == 0 ) return;
+
 currentScore--;
-selectedWidget = PlayerCardWidget(teamData:teamsData[event.pageNumber] ,  pageNumber: event.pageNumber );
-//  await PlayerDataSqfliteDBClass().createPlayer(player: selectedTeamData.players![0].name!, score:currentScore.toString(), team:  selectedTeamData.team! );
+ await localDb.updatePlayerSore(id: playerIdInDatabase , score: currentScore.toString(), team: teamsData[event.pageNumber].team! , player: teamsData[event.pageNumber].players![event.player]!.name!  );
 
-await PlayerDataSqfliteDBClass().deleteDatabase();
+// await localDb.deleteDatabase();
 
-emit( DashboardPageChangedState( selectedWidget , currentScore  , 0 ) );
+emit( DashboardPageChangedState( selectedTeamData , currentScore  , event.player ) );
 
 });
 
 on<PlayerChangeEvent>((event, emit) async{
-selectedWidget = PlayerCardWidget(teamData:teamsData[event.pageNumber] ,  pageNumber: event.pageNumber );
 
 
 selectedTeamData = teamsData[event.pageNumber];
 print( selectedTeamData.players![event.player].name! );
-var getPlayerFromDb = await PlayerDataSqfliteDBClass().getPlayer(team: selectedTeamData.team! , player:  selectedTeamData.players![event.player].name!  );
+var getPlayerFromDb = await localDb.getPlayer(team: selectedTeamData.team! , player:  selectedTeamData.players![event.player].name!  );
 
 var resfromDb;
 getPlayerFromDb.fold((l) {
@@ -160,9 +179,13 @@ var setPlayerFromDb;
 
 if( resfromDb == 'null' ){
 
-playerIdInDatabase =   await PlayerDataSqfliteDBClass().createPlayer(player: selectedTeamData.players![event.player].name!, score: selectedTeamData.players![event.player].score!, team:  selectedTeamData.team! );
+playerIdInDatabase =   await localDb.createPlayer(player: selectedTeamData.players![event.player].name!, score: selectedTeamData.players![event.player].score!, team:  selectedTeamData.team! );
+var playerData = await  localDb.getPlayer(team: selectedTeamData.team! , player:  selectedTeamData.players![0].name!  );
 
+await playerData.fold((l) => null, (r) {
 
+  resfromDb = r;
+});
 }else{
 
 playerIdInDatabase = resfromDb['id'];
@@ -179,12 +202,68 @@ for (var i = 0; i < selectedTeamData.players!.length; i++) {
 }
 
 
-      selectedWidget = PlayerCardWidget(teamData: selectedTeamData  ,  pageNumber: event.pageNumber );
 
 var score = int.parse(selectedTeamData.players![event.player].score!);
 
-emit( DashboardPageChangedState(selectedWidget ,   score , event.player) );
+emit( DashboardPageChangedState( selectedTeamData ,   score , event.player) );
 });
+
+
+// conditionalDBOperation({ required int team ,required String name , required String playerScore })async{
+
+// var getPlayerFromDb = await localDb.getPlayer(team:  team  , player:  name );
+
+// var resfromDb;
+// getPlayerFromDb.fold((l) {
+// resfromDb = l;
+// }, (r) {
+// resfromDb = r;
+// });
+
+
+
+// if( resfromDb == 'null' ){
+
+// playerIdInDatabase =   await localDb.createPlayer(player: name, score: playerScore, team:  team );
+// var playerData = await  localDb.getPlayer(team: team , player:  name   );
+
+// await playerData.fold((l) => null, (r) {
+
+//   resfromDb = r;
+// });
+
+
+// }else{
+
+// playerIdInDatabase = resfromDb['id'];
+// }
+
+// for (var i = 0; i < selectedTeamData.players!.length; i++) {
+
+  
+//   if( selectedTeamData.players![i].name == resfromDb['player'] ){
+//     selectedTeamData.players![i].score = resfromDb['score'];
+//   }
+// }
+
+
+
+// var score = int.parse(selectedTeamData.players![0].score!);
+//     };
+
+
+///
+////
+////
+///
+///
+///
+///
+///
+///
+///
+///
+
 
   
   
@@ -196,7 +275,5 @@ emit( DashboardPageChangedState(selectedWidget ,   score , event.player) );
 
 
 
-
-
-
+  
 }

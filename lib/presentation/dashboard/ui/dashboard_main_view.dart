@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:infinity_page_view_astro/infinity_page_view_astro.dart';
+import 'package:test_2/data/rawData/pl_data.dart';
 import 'package:test_2/di/di.dart';
 import 'package:test_2/presentation/dashboard/bloc/dashboard_bloc.dart';
 import 'package:test_2/presentation/dashboard/ui/widget/playerCard_widget.dart';
@@ -21,8 +22,7 @@ class _DashboardMainViewState extends State<DashboardMainView> {
     bloc = locator.get<DashboardBloc>();
 
 bloc.add(DashboardInitialEvent());
-    // bloc.add(DashboardPageChangeEvent(pageNumber: 0 , score: 0));
-    // TODO: implement initState
+   
     super.initState();
   }
 
@@ -41,12 +41,13 @@ bloc.add(DashboardInitialEvent());
             child: InfinityPageView(
                 controller: pageContro,
                 onPageChanged: (value) {
-                  bloc.add(DashboardPageChangeEvent(pageNumber: value , player: 0 ));
+                  bloc.add(DashboardPageChangeEvent(pageNumber: value ,  ));
                 },
-                itemCount: 4,
+                itemCount: PlData.data.length,
                 itemBuilder: (context, index) {
+                  
                   if (state is DashboardPageChangedState) {
-                    return state.card;
+                    return  PlayerCardWidget(teamData: state.teamData , pageNumber: index , mainViewController: pageContro, ) ;
                   } else {
                     return SizedBox.shrink();
                   }
